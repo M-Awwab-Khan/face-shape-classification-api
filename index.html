@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Face Shape Classifier</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+
+      #output {
+        margin-top: 20px;
+        font-size: 18px;
+        color: #333;
+      }
+
+      .preview {
+        margin-top: 20px;
+        max-width: 300px;
+        max-height: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Face Shape Classifier</h1>
+    <form id="uploadForm">
+      <input
+        type="file"
+        id="imageInput"
+        name="image"
+        accept="image/*"
+        required
+      />
+      <br /><br />
+      <button type="submit">Upload and Classify</button>
+    </form>
+
+    <img
+      id="preview"
+      class="preview"
+      src="#"
+      alt="Image Preview"
+      style="display: none"
+    />
+    <div id="output"></div>
+
+    <script>
+      const uploadForm = document.getElementById("uploadForm");
+      const imageInput = document.getElementById("imageInput");
+      const outputDiv = document.getElementById("output");
+      const previewImg = document.getElementById("preview");
+
+      // Preview the uploaded image
+      imageInput.addEventListener("change", () => {
+        const file = imageInput.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            previewImg.style.display = "block";
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Handle form submission
+      uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const file = imageInput.files[0];
+        if (!file) {
+          outputDiv.textContent = "Please upload an image.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        outputDiv.textContent = "Classifying...";
+
+        try {
+          const response = await fetch(
+            "http://localhost:3000/classify-face-shape",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            outputDiv.innerHTML = `<strong>Face Shape:</strong> ${
+              data.label || "Unknown"
+            }`;
+          } else {
+            const error = await response.json();
+            outputDiv.textContent = `Error: ${
+              error.message || "Unable to classify the image."
+            }`;
+          }
+        } catch (err) {
+          console.error(err);
+          outputDiv.textContent = "An error occurred. Please try again later.";
+        }
+      });
+    </script>
+  </body>
+</html>
